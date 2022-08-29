@@ -44,6 +44,21 @@ resource "azurerm_public_ip" "main" {
   domain_name_label   = var.DNS
 }
 
+# Create bastion
+resource "azurerm_bastion_host" "main" {
+  name                = var.bastion
+  location            = var.localisation
+  resource_group_name = var.resource_group_name
+  tunneling_enabled   = true
+  sku                 = "Standard"
+
+  ip_configuration {
+    name                 = var.config_name2
+    subnet_id            = azurerm_subnet.subnet1.id
+    public_ip_address_id = azurerm_public_ip.main.id
+  }
+}
+
 # Create VM
 resource "azurerm_network_interface" "main" {
   name                = var.VM-nic
@@ -85,16 +100,29 @@ resource "azurerm_linux_virtual_machine" "main" {
   }
 }
 
-# Create bastion
-resource "azurerm_bastion_host" "main" {
-  name                = var.bastion
-  location            = var.localisation
-  resource_group_name = var.resource_group_name
+resource "azurerm_network_security_group" "main" {
+  name                = var.NSG
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
 
-  ip_configuration {
-    name                 = var.config_name2
-    subnet_id            = azurerm_subnet.subnet1.id
-    public_ip_address_id = azurerm_public_ip.main.id
+  security_rule {
+    name                       = var.VM_rule
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges     = [ "443","22","3389" ]
+    source_address_prefix      = "*"
+    destination_address_prefix = azurerm_public_ip.main.ip_address
+  }
+
+  tags = {
+    environment = "Production"
   }
 }
 
+resource "azurerm_network_interface_security_group_association" "main" {
+  network_interface_id      = azurerm_network_interface.main.id
+  network_security_group_id = azurerm_network_security_group.main.id
+}

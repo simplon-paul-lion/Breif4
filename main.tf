@@ -83,7 +83,17 @@ resource "azurerm_linux_virtual_machine" "main" {
 
   admin_ssh_key {
     username   = var.admin
-    public_key = file("C:/Users/utilisateur/.ssh/id_rsa.pub")
+    public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDRBSlckGDaO56A0EEpSdi4fVE1dGyt14jb82CS2+McddNmqINOo53h4s/Lo6IPfoGpLegHXT1DRw9qb55XgVFDHhV9aTPvZJaKN3RbxlGrHbQZ2NuWRsU+KBxdKq4Qr94zBYgii/nojAmf56nYN0SMwBOGMdc1IbSybqiOFIZfFo18MATYJL4gInGu4BeyMQoN40tgddzYOx+94orM8FH8HuhhlkQCzvHTyz8Cov5jYyhV088H2hRgvn1E7bJHl8YjsT4wubUvf8ilDu6EzhMntQ1C61L65txyfxYp3E2O1ec8/0sLkW5rHpuyncUu7CbIFHkZ3qFhPeE1LLa7lmrmnu7N4BragVmX1oknR05jv/cucedRowwGnrcqKYiBQ7rVa9cWlY2ayCsmbDm7CwnOZoOebYpFO1RnKx/DJ8r/GgUysHaG9A1d3hdzloEwxbG2Osg2t5J8jf8zMNctb4MkbdZj9eIaHEsNyYHEtBpIZye+8Louf5m8EJGHCeKCksM= utilisateur@UTILISA-IUAPJVS"
+  }
+
+  admin_ssh_key {
+    username   = var.admin2
+    public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0agEe2jMnbMN3OX6bunAdpOoK7idzd5RajsTYcUuF+x1iqqUIXNqDmn6r518hl/NBzUFHshv5k/lasB5pUbHhS2MLpm9t56d5pHnSd3DfAieIggfrpk4RN5yKyKfYQ9DGNjvXgzXy2lSKnXG8fPrkhReJKGpuXe/se5UkpUtGyXQ4BQsAfaArzp0etWZF/KwyZ7ckfOsb7iHCicgoUjqyXbdpP+EooyhSsj6HRhINQ3OuSmtRhrYZLyYXbI/FuN5mtR/+2D4EOhEHFhlFWObJR7TUYRPOW/rCGF/2hNrqwdwWvSmHNg54wRGWmzmrOHZBgyIOAol20+2LUx53eaKObN8lx2chcHVGwEoLjEqbcTv2iQ/C0sTKrqKnvZyEqVftDS/3wMRt5kz4YwJmH7Bk+dZfzdoZX4lqtoYRZKljSmASn836TsH5SdAaNeD62BJ2Efgp3eKxr3ht5vZ9Ktf/aSxpayQ1rJXAmHYeueJI1p3c3v4cnJBpxwSG6cPNvGE= utilisateur@UTILISA-RDIKR2H"
+  }
+
+  admin_ssh_key {
+    username   = var.admin3
+    public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCno1QZ/tXQ+GT4To3zYouq3iMDhRrksttq00iQmQ5tyhQMKCkgQ3xKj5vu9eOyiBbe9pDclhF8T6Bb+qlvo8CoRJrUgthOb+bg8gfYeOipRYpk9IDYq2/Mlf261hXnmNwI5bZrvj/dD5Y+hj16JHma0B22xUp94BJRPj4vNvaWH1HuCFCdvHXga1XjvjggOl45lg+jDBirSl+nvnuFiiGfBfIa+ZFsYgTfapYIrbDi8PWk2shD7QuJvXiGDEd9dDCNcSe8Dslr8+M6CRRmnpPK8wJZiZrvnrPRw3tRuFLxR5V1ip3YMiuvfktw6Qg+RboJeoSw41qblwpH9bur0dt7vd8+/QiUbGp+x5UPn2PpRmOKqTMbRno3RTxaQFaemRzszn0vJIq4bH9NloVELo0GhIcadAmlIdAdLX63NoNJ2LCv6hZhBLJNtf5PZVjkWBYgbsxFPyu6bP532TAg3iwj40sFCXHXzqaTYSm1bzhCk+RGrdvcB760D1aoTXLEKqzoeocjpAuL6lI0JBvKMO+tEpS0M+cHPOTgPz5ZLEbjDdZHw4PzFyt0LaelPwXN8fl3hU89HH5E1iT/qPSCQTIwMnU9y+1fojMuXPYC7lb8bRFcUyAB5L35NOFhIiEZtd50NZsndAelJhXV9zQ9bj55MjYKQVgpl8RdbtpTUE8UgQ== rajac@LAPTOP-FI95FL62"
   }
 
   os_disk {
@@ -112,9 +122,9 @@ resource "azurerm_network_security_group" "main" {
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_ranges     = [ "443","22","3389" ]
-    source_address_prefix      = "*"
-    destination_address_prefix = azurerm_public_ip.main.ip_address
+    destination_port_ranges    = ["22"]
+    source_address_prefix      = azurerm_public_ip.main.ip_address
+    destination_address_prefix = "*"
   }
 
   tags = {

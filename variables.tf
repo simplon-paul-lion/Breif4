@@ -54,6 +54,14 @@ variable "admin"{
     default = "celia"
 }
 
+variable "admin2"{
+    default = "paul"
+}
+
+variable "admin3"{
+    default = "raja"
+}
+
 variable "OSdisk_name"{
     default = "OSdisk"
 }

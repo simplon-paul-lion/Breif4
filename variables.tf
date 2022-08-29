@@ -61,3 +61,11 @@ variable "OSdisk_name"{
 variable "config_name2"{
     default = "ip_config_bastion"
 }
+
+variable "NSG"{
+    default = "NSG_group"
+}
+
+variable "VM_rule"{
+    default = "VM_Bastion_rule"
+}

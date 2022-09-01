@@ -91,6 +91,20 @@ resource "azurerm_network_interface" "main" {
   }
 }
 
+data "template_file" "script" {
+  template = "${file("cloud-init.yml")}"
+}
+
+data "template_cloudinit_config" "main" {
+  gzip          = true
+  base64_encode = true
+
+  part {
+    content_type = "text/cloud-config"
+    content      = "${data.template_file.script.rendered}"
+  }
+}
+
 resource "azurerm_linux_virtual_machine" "main" {
   name                = var.VM_name
   resource_group_name = azurerm_resource_group.main.name
@@ -119,6 +133,7 @@ resource "azurerm_linux_virtual_machine" "main" {
   computer_name       = var.computerVM_name
   disable_password_authentication = true
   admin_username = var.admin
+  custom_data = data.template_cloudinit_config.main.rendered
 }
 
 ## Create NSG

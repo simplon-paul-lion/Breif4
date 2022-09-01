@@ -23,7 +23,11 @@ variable "subnet_appbdd" {
 }
 
 variable "ippublique" {
-  default = "IP_publique"
+  default = "IP_publique_bastion"
+}
+
+variable "ippublique2" {
+  default = "IP_publique_gateway"
 }
 
 variable "bastion" {
@@ -32,6 +36,10 @@ variable "bastion" {
 
 variable "DNS"{
     default = "dns-g3"
+}
+
+variable "DNS2"{
+    default = "dns-gateway-g3"
 }
 
 variable "VM-nic"{

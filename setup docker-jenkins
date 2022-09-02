@@ -5,7 +5,6 @@ INSTALLATION DE DOCKER
 1- sudo apt-get update
 2- sudo apt-get install ca-certificates curl gnupg lsb-release
 3- Add Docker’s official GPG key:
-
  sudo mkdir -p /etc/apt/keyrings
  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 4- sudo apt-get update

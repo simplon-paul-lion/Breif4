@@ -50,9 +50,9 @@ resource "azurerm_public_ip" "main" {
   domain_name_label   = var.DNS
 }
 
-## Create the public IP for gateway
+## Create the public IP for VM
 
-resource "azurerm_public_ip" "gateway" {
+resource "azurerm_public_ip" "VM" {
   name                = var.ippublique2
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
@@ -87,7 +87,9 @@ resource "azurerm_network_interface" "main" {
   ip_configuration {
     name                          = var.config_name
     subnet_id                     = azurerm_subnet.subnet3.id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = "Static"
+    private_ip_address = "10.1.3.1/24"
+    public_ip_address_id = azurerm_public_ip.VM.id
   }
 }
 
@@ -109,7 +111,7 @@ resource "azurerm_linux_virtual_machine" "main" {
   name                = var.VM_name
   resource_group_name = azurerm_resource_group.main.name
   location            = var.localisation
-  size                = "Standard_A1_V2"
+  size                = "Standard_A1_v2"
   network_interface_ids = [azurerm_network_interface.main.id,]
 
   admin_ssh_key {
@@ -195,6 +197,18 @@ resource "azurerm_mariadb_database" "main" {
 
 }
 
+resource "azurerm_mariadb_firewall_rule" "main" {
+  name                = "firewall-rule"
+  resource_group_name = azurerm_resource_group.main.name
+  server_name         = azurerm_mariadb_server.main.name
+  start_ip_address    = azurerm_public_ip.main.ip_address
+  end_ip_address      = azurerm_public_ip.main.ip_address
+}
+
+# Transférer IP publique VM à gateway
+
+
+
 ## Create gateway
 
 locals {
@@ -225,7 +239,7 @@ resource "azurerm_application_gateway" "main" {
 
   frontend_port {
     name = local.frontend_port_name
-    port = 80
+    port = 8080
   }
 
   frontend_ip_configuration {
@@ -235,6 +249,8 @@ resource "azurerm_application_gateway" "main" {
 
   backend_address_pool {
     name = local.backend_address_pool_name
+    ip_addresses = ["10.1.3.1/24",]
+
   }
 
   backend_http_settings {
@@ -261,6 +277,12 @@ resource "azurerm_application_gateway" "main" {
     backend_http_settings_name = local.http_setting_name
     priority = 100
   }
+}
+
+resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "main" {
+  network_interface_id    = azurerm_network_interface.main.id
+  ip_configuration_name   = "config-assoc-gateway"
+  backend_address_pool_id = tolist(azurerm_application_gateway.main.backend_address_pool).0.id
 }
 
 ## Create keyvault

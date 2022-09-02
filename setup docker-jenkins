@@ -1,0 +1,19 @@
+
+INSTALLATION DE DOCKER
+
+
+1- sudo apt-get update
+2- sudo apt-get install ca-certificates curl gnupg lsb-release
+3- Add Docker’s official GPG key:
+
+ sudo mkdir -p /etc/apt/keyrings
+ curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+4- sudo apt-get update
+ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+5- sudo apt-get update 
+
+INSTALLATION DU CONTENAIR JENKINS
+
+1- sudo docker pull jenkins/jenkins:lts-jdk11
+
+2- sudo docker run -p 8080:8080 -p 50000:50000 --restart=on-failure jenkins/jenkins:lts-jdk11

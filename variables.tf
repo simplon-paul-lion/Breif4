@@ -27,7 +27,7 @@ variable "ippublique" {
 }
 
 variable "ippublique2" {
-  default = "IP_publique_gateway"
+  default = "IP_publique_vm"
 }
 
 variable "bastion" {
@@ -39,7 +39,7 @@ variable "DNS"{
 }
 
 variable "DNS2"{
-    default = "dns-gateway-g3"
+    default = "dns-vm-g3"
 }
 
 variable "VM-nic"{

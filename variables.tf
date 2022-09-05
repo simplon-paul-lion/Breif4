@@ -3,7 +3,7 @@ variable "resource_group_name" {
 }
 
 variable "localisation" {
-  default = "francecentral"
+  default = "eastus"
 }
 
 variable "vnet_name" {
@@ -115,7 +115,7 @@ variable "gateway_config"{
 }
 
 variable "keyvault_name"{
-    default = "keyvault-g3"
+    default = "keyvault-g3b4"
 }
 
 variable "storage_name"{
@@ -124,4 +124,16 @@ variable "storage_name"{
 
 variable "container_name"{
     default = "g3conteneur"
+}
+
+variable "cache_name"{
+    default = "cache_TLS"
+}
+
+variable "cache_blob_name"{
+    default = "cache_blobe_TLS"
+}
+
+variable "blob_name"{
+    default = "stockage_blob"
 }

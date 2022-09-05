@@ -59,7 +59,7 @@ variable "computerVM_name"{
 }
 
 variable "admin"{
-    default = "admin"
+    default = "adming3"
 }
 
 variable "OSdisk_name"{
@@ -83,7 +83,7 @@ variable "VM_rule2"{
 }
 
 variable "server_name"{
-    default = "g3server"
+    default = "serverg3b4"
 }
 
 variable "mariadb_admin"{

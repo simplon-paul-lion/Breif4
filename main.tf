@@ -9,61 +9,65 @@ resource "azurerm_resource_group" "main" {
 
 ## Create a virtual network within the resource group
 
-resource "azurerm_virtual_network" "main" {
+resource "azurerm_virtual_network" "vnet" {
   name                = var.vnet_name
   resource_group_name = azurerm_resource_group.main.name
-  location = var.localisation
+  location            = var.localisation
   address_space       = ["10.1.0.0/16"]
 }
 
-## Create the 3 subnets
+## Create subnet VM
 
-resource "azurerm_subnet" "subnet1" {
-  name                 = var.subnet_bastion
+resource "azurerm_subnet" "subnet_vm" {
+  name                 = var.subnet_vm
   resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.1.0/24"]
 }
 
-resource "azurerm_subnet" "subnet2" {
-  name                 = var.subnet_gateway
+# Create subnet bastion
+
+resource "azurerm_subnet" "subnet_bastion" {
+  name                 = var.subnet_bastion
   resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.2.0/24"]
 }
 
-resource "azurerm_subnet" "subnet3" {
-  name                 = var.subnet_appbdd
+# Create subnet gateway
+
+resource "azurerm_subnet" "subnet_gateway" {
+  name                 = var.subnet_gateway
   resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.3.0/24"]
 }
 
 ## Create the public IP for bastion
 
-resource "azurerm_public_ip" "main" {
-  name                = var.ippublique
+resource "azurerm_public_ip" "adresse_bastion" {
+  name                = var.ip_bastion
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
   allocation_method   = "Static"
   sku                 = "Standard"
-  domain_name_label   = var.DNS
+  domain_name_label   = var.DNS_bastion
 }
 
 ## Create the public IP for VM
 
-resource "azurerm_public_ip" "VM" {
-  name                = var.ippublique2
+resource "azurerm_public_ip" "adresse_vm" {
+  name                = var.ip_vm
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
   allocation_method   = "Static"
   sku                 = "Standard"
-  domain_name_label   = var.DNS2
+  domain_name_label   = var.DNS_vm
 }
 
 ## Create bastion
 
-resource "azurerm_bastion_host" "main" {
+resource "azurerm_bastion_host" "bastion" {
   name                = var.bastion
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
@@ -71,25 +75,24 @@ resource "azurerm_bastion_host" "main" {
   sku                 = "Standard"
 
   ip_configuration {
-    name                 = var.config_name2
-    subnet_id            = azurerm_subnet.subnet1.id
-    public_ip_address_id = azurerm_public_ip.main.id
+    name                 = var.config_bastion
+    subnet_id            = azurerm_subnet.subnet_bastion.id
+    public_ip_address_id = azurerm_public_ip.adresse_bastion.id
   }
 }
 
 ## Create VM
 
-resource "azurerm_network_interface" "main" {
+resource "azurerm_network_interface" "vm" {
   name                = var.VM-nic
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
 
   ip_configuration {
-    name                          = var.config_name
-    subnet_id                     = azurerm_subnet.subnet3.id
+    name                          = var.config_vm
+    subnet_id                     = azurerm_subnet.subnet_vm.id
     private_ip_address_allocation = "Static"
-    private_ip_address = "10.1.3.1/24"
-    public_ip_address_id = azurerm_public_ip.VM.id
+    private_ip_address            = "10.1.1.10"
   }
 }
 
@@ -97,7 +100,7 @@ data "template_file" "script" {
   template = "${file("cloud-init.yml")}"
 }
 
-data "template_cloudinit_config" "main" {
+data "template_cloudinit_config" "cloudinit" {
   gzip          = true
   base64_encode = true
 
@@ -107,12 +110,12 @@ data "template_cloudinit_config" "main" {
   }
 }
 
-resource "azurerm_linux_virtual_machine" "main" {
+resource "azurerm_linux_virtual_machine" "vm" {
   name                = var.VM_name
   resource_group_name = azurerm_resource_group.main.name
   location            = var.localisation
   size                = "Standard_A1_v2"
-  network_interface_ids = [azurerm_network_interface.main.id,]
+  network_interface_ids = [azurerm_network_interface.vm.id]
 
   admin_ssh_key {
     username   = var.admin
@@ -126,21 +129,21 @@ resource "azurerm_linux_virtual_machine" "main" {
   }
 
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "16.04-LTS"
+    publisher = "Debian"
+    offer     = "debian-11"
+    sku       = "11"
     version   = "latest"
   }
   
-  computer_name       = var.computerVM_name
+  computer_name                   = var.computerVM_name
   disable_password_authentication = true
-  admin_username = var.admin
-  custom_data = data.template_cloudinit_config.main.rendered
+  admin_username                  = var.admin
+  custom_data                     = data.template_cloudinit_config.cloudinit.rendered
 }
 
 ## Create NSG
 
-resource "azurerm_network_security_group" "main" {
+resource "azurerm_network_security_group" "vm" {
   name                = var.NSG
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
@@ -157,25 +160,49 @@ resource "azurerm_network_security_group" "main" {
     destination_address_prefix = "*"
   }
 
+   security_rule {
+    name                       = var.VM_rule2
+    priority                   = 101
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8080"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = var.VM_rule3
+    priority                   = 102
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["443"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
   tags = {
     environment = "Production"
   }
 }
 
-resource "azurerm_network_interface_security_group_association" "main" {
-  network_interface_id      = azurerm_network_interface.main.id
-  network_security_group_id = azurerm_network_security_group.main.id
+resource "azurerm_network_interface_security_group_association" "vm" {
+  network_interface_id      = azurerm_network_interface.vm.id
+  network_security_group_id = azurerm_network_security_group.vm.id
 }
 
 ## Create mariadb database
 
-resource "azurerm_mariadb_server" "main" {
-  name = "g3mariadb"
+resource "azurerm_mariadb_server" "mariadb" {
+  name = var.server_name
   location = var.localisation
   resource_group_name = azurerm_resource_group.main.name
 
-  administrator_login = "adminmariadb"
-  administrator_login_password = "helloPaulCeliaRaja3"
+  administrator_login = var.mariadb_admin
+  administrator_login_password = var.mariadb_password
 
   sku_name = "B_Gen5_2"
   storage_mb = 5120
@@ -188,41 +215,37 @@ resource "azurerm_mariadb_server" "main" {
   ssl_enforcement_enabled = true
 }
 
-resource "azurerm_mariadb_database" "main" {
-  name = "mariadb"
+resource "azurerm_mariadb_database" "mariadb" {
+  name = var.mariadb_name
   resource_group_name = azurerm_resource_group.main.name 
-  server_name = azurerm_mariadb_server.main.name
+  server_name = azurerm_mariadb_server.mariadb.name
   charset = "utf8" 
   collation = "utf8_general_ci"
 
 }
 
-resource "azurerm_mariadb_firewall_rule" "main" {
-  name                = "firewall-rule"
+resource "azurerm_mariadb_firewall_rule" "mariadb" {
+  name                = var.mariadb_rule
   resource_group_name = azurerm_resource_group.main.name
-  server_name         = azurerm_mariadb_server.main.name
-  start_ip_address    = azurerm_public_ip.main.ip_address
-  end_ip_address      = azurerm_public_ip.main.ip_address
+  server_name         = azurerm_mariadb_server.mariadb.name
+  start_ip_address    = azurerm_public_ip.adresse_vm.ip_address
+  end_ip_address      = azurerm_public_ip.adresse_vm.ip_address
 }
-
-# Transférer IP publique VM à gateway
-
-
 
 ## Create gateway
 
 locals {
-  backend_address_pool_name      = "${azurerm_virtual_network.main.name}-beap"
-  http_setting_name              = "${azurerm_virtual_network.main.name}-be-htst"
-  listener_name                  = "${azurerm_virtual_network.main.name}-httplstn"
-  request_routing_rule_name      = "${azurerm_virtual_network.main.name}-rqrt"
-  redirect_configuration_name    = "${azurerm_virtual_network.main.name}-rdrcfg"
-  frontend_port_name             = "${azurerm_virtual_network.main.name}-fpn"
-  frontend_ip_configuration_name = "${azurerm_virtual_network.main.name}-ficn"
+  backend_address_pool_name      = "${azurerm_virtual_network.vnet.name}-beap"
+  http_setting_name              = "${azurerm_virtual_network.vnet.name}-be-htst"
+  listener_name                  = "${azurerm_virtual_network.vnet.name}-httplstn"
+  request_routing_rule_name      = "${azurerm_virtual_network.vnet.name}-rqrt"
+  redirect_configuration_name    = "${azurerm_virtual_network.vnet.name}-rdrcfg"
+  frontend_port_name             = "${azurerm_virtual_network.vnet.name}-fpn"
+  frontend_ip_configuration_name = "${azurerm_virtual_network.vnet.name}-ficn"
 }
 
-resource "azurerm_application_gateway" "main" {
-  name                = "jenkinsproxy"
+resource "azurerm_application_gateway" "gateway" {
+  name                = var.gateway_name
   resource_group_name = azurerm_resource_group.main.name
   location            = var.localisation
 
@@ -233,8 +256,8 @@ resource "azurerm_application_gateway" "main" {
   }
 
   gateway_ip_configuration {
-    name      = "my-gateway-ip-configuration"
-    subnet_id = azurerm_subnet.subnet2.id
+    name      = var.gateway_config
+    subnet_id = azurerm_subnet.subnet_gateway.id
   }
 
   frontend_port {
@@ -244,13 +267,11 @@ resource "azurerm_application_gateway" "main" {
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
-    public_ip_address_id = azurerm_public_ip.gateway.id
+    public_ip_address_id = azurerm_public_ip.adresse_vm.id
   }
 
   backend_address_pool {
     name = local.backend_address_pool_name
-    ip_addresses = ["10.1.3.1/24",]
-
   }
 
   backend_http_settings {
@@ -279,18 +300,18 @@ resource "azurerm_application_gateway" "main" {
   }
 }
 
-resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "main" {
-  network_interface_id    = azurerm_network_interface.main.id
-  ip_configuration_name   = "config-assoc-gateway"
-  backend_address_pool_id = tolist(azurerm_application_gateway.main.backend_address_pool).0.id
+resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "gateway" {
+  network_interface_id    = azurerm_network_interface.vm.id
+  ip_configuration_name   = var.config_vm
+  backend_address_pool_id = tolist(azurerm_application_gateway.gateway.backend_address_pool).0.id
 }
 
 ## Create keyvault
 
 data "azurerm_client_config" "current" {}
 
-resource "azurerm_key_vault" "main" {
-  name                        = "keyvault-g3"
+resource "azurerm_key_vault" "keyvault" {
+  name                        = var.keyvault_name
   location                    = var.localisation
   resource_group_name         = azurerm_resource_group.main.name
   enabled_for_disk_encryption = true
@@ -318,8 +339,8 @@ resource "azurerm_key_vault" "main" {
   }
 }
 
-resource "azurerm_storage_account" "main" {
-  name                     = "g3stockage"
+resource "azurerm_storage_account" "keyvault" {
+  name                     = var.storage_name
   resource_group_name      = azurerm_resource_group.main.name
   location                 = var.localisation
   account_tier             = "Standard"
@@ -330,8 +351,8 @@ resource "azurerm_storage_account" "main" {
   }
 }
 
-resource "azurerm_storage_container" "main" {
-  name                  = "g3conteneur"
-  storage_account_name  = azurerm_storage_account.main.name
+resource "azurerm_storage_container" "keyvault" {
+  name                  = var.container_name
+  storage_account_name  = azurerm_storage_account.keyvault.name
   container_access_type = "private"
 }

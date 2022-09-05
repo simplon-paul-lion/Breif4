@@ -82,6 +82,10 @@ variable "VM_rule2"{
     default = "HTTP"
 }
 
+variable "VM_rule3"{
+    default = "HTTPS"
+}
+
 variable "server_name"{
     default = "serverg3b4"
 }

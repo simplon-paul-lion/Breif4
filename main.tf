@@ -365,19 +365,3 @@ resource "azurerm_storage_blob" "keyvault" {
   source                 = "test.txt"
 }
 
-resource "azurerm_hpc_cache" "keyvault" {
-  name                = var.cache_name
-  resource_group_name = azurerm_resource_group.main.name
-  location            = var.localisation
-  cache_size_in_gb    = 3072
-  subnet_id           = azurerm_subnet.subnet_gateway.id
-  sku_name            = "Standard_2G"
-}
-
-resource "azurerm_hpc_cache_blob_target" "keyvault" {
-  name                 = var.cache_blob_name
-  resource_group_name  = azurerm_resource_group.main.name
-  cache_name           = azurerm_hpc_cache.keyvault.name
-  storage_container_id = azurerm_storage_container.keyvault.resource_manager_id
-  namespace_path       = "/.well-known/acme-challenge"
-}

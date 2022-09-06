@@ -137,3 +137,67 @@ variable "cache_blob_name"{
 variable "blob_name"{
     default = "stockage_blob"
 }
+
+variable "log_name"{
+    default = "B4-G3"
+}
+
+variable "action_group_name"{
+    default = "Group_B4G3"
+}
+
+variable "action_group_short_name"{
+    default = "GpB4G3"
+}
+
+variable "devops1"{
+    default = "celia"
+}
+
+variable "devops2"{
+    default = "raja"
+}
+
+variable "devops3"{
+    default = "paul"
+}
+
+variable "formateur1"{
+    default = "alfred"
+}
+
+variable "formateur2"{
+    default = "bryan"
+}
+
+variable "email_devops1"{
+    default = "celia.ouedrao@gmail.com"
+}
+
+variable "email_devops2"{
+    default = "raja-8@live.it"
+}
+
+variable "email_devops3"{
+    default = "simplon.lion.paul@gmail.com"
+}
+
+variable "email_formateur1"{
+    default = "asawaya.ext@simplon.co"
+}
+
+variable "email_formateur2"{
+    default = "bstewart.ext@simplon.co"
+}
+
+variable "alert_name_vm"{
+    default = "Alert_VM_G3B4"
+}
+
+variable "alert_name_db"{
+    default = "Alert_mariadb_G3B4"
+}
+
+variable "alert_name_gateway"{
+    default = "Alert_gateway_G3B4"
+}

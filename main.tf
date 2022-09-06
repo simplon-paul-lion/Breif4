@@ -358,10 +358,129 @@ resource "azurerm_storage_container" "keyvault" {
 }
 
 resource "azurerm_storage_blob" "keyvault" {
-  name                   = var.blob_name
+  name                   = "/.well-known/acme-challenge"
   storage_account_name   = azurerm_storage_account.keyvault.name
   storage_container_name = azurerm_storage_container.keyvault.name
   type                   = "Block"
   source                 = "test.txt"
 }
 
+resource "azurerm_log_analytics_workspace" "monitor" {
+  name                = var.log_name
+  location            = var.localisation
+  resource_group_name = azurerm_resource_group.main.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+resource "azurerm_monitor_action_group" "monitor" {
+  name                = var.action_group_name
+  resource_group_name = azurerm_resource_group.main.name
+  short_name          = var.action_group_short_name
+
+  email_receiver {
+    name                    = var.devops1
+    email_address           = var.email_devops1
+    use_common_alert_schema = true
+  }
+
+    email_receiver {
+    name                    = var.devops2
+    email_address           = var.email_devops2
+    use_common_alert_schema = true
+  }
+
+    email_receiver {
+    name                    = var.devops3
+    email_address           = var.email_devops3
+    use_common_alert_schema = true
+  }
+
+  #   email_receiver {
+  #   name                    = var.formateur1
+  #   email_address           = var.email_formateur1
+  #   use_common_alert_schema = true
+  # }
+
+  #   email_receiver {
+  #   name                    = var.formateur2
+  #   email_address           = var.email_formateur2
+  #   use_common_alert_schema = true
+  # }
+}
+
+resource "azurerm_monitor_metric_alert" "vm" {
+  name                = var.alert_name_vm
+  resource_group_name = azurerm_resource_group.main.name
+  scopes              = [azurerm_linux_virtual_machine.vm.id]
+  description         = "Action déclenchée quand CPU > 90%"
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "Percentage CPU"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 90
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.monitor.id
+  }
+}
+
+resource "azurerm_monitor_metric_alert" "mariadb" {
+  name                = var.alert_name_db
+  resource_group_name = azurerm_resource_group.main.name
+  scopes              = [azurerm_mariadb_database.mariadb.id]
+  description         = "Action déclenchée quand espace disponible sur la base de données < 10%"
+
+  criteria {
+    metric_namespace = "Microsoft.DBforMariaDB/servers/databases"
+    metric_name      = "storage_used"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 90
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.monitor.id
+  }
+}
+
+resource "azurerm_monitor_metric_alert" "gateway" {
+  name                = var.alert_name_gateway
+  resource_group_name = azurerm_resource_group.main.name
+  scopes              = [azurerm_application_gateway.gateway.id]
+  description         = "Action déclenchée quand l'application est indisponible"
+
+  criteria {
+    metric_namespace = "Microsoft.Network/applicationGateways"
+    metric_name      = "Heartbeat"
+    aggregation      = "Total"
+    operator         = "Equals"
+    threshold        = 0
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.monitor.id
+  }
+}
+
+# resource "azurerm_monitor_metric_alert" "gateway" {
+#   name                = var.alert_name_gateway
+#   resource_group_name = azurerm_resource_group.main.name
+#   scopes              = [azurerm_application_gateway.gateway.id]
+#   description         = "Action déclenchée quand la date d’expiration du certificat TLS est < 7 jours"
+
+#   criteria {
+#     metric_namespace = ""
+#     metric_name      = ""
+#     aggregation      = "Total"
+#     operator         = "LesserThan"
+#     threshold        = 7
+#   }
+
+#   action {
+#     action_group_id = azurerm_monitor_action_group.monitor.id
+#   }
+# }

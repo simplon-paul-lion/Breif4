@@ -326,15 +326,15 @@ resource "azurerm_key_vault" "keyvault" {
     object_id = data.azurerm_client_config.current.object_id
 
     key_permissions = [
-      "Get",
+      "Get", "Backup", "Create", "Decrypt", "Delete", "Encrypt", "Import", "List", "Purge", "Recover", "Restore", "Sign", "Update", "UnwrapKey", "Verify", "WrapKey"
     ]
 
     secret_permissions = [
-      "Get",
+      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore","Set"
     ]
 
     storage_permissions = [
-      "Get",
+      "Get", "Backup", "Delete", "DeleteSAS", "GetSAS", "List","ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update"
     ]
   }
 }
@@ -372,6 +372,13 @@ resource "azurerm_log_analytics_workspace" "monitor" {
   sku                 = "PerGB2018"
   retention_in_days   = 30
 }
+
+# resource "azurerm_application_insights" "monitor" {
+#   name                = var.app_insight_name
+#   location            = var.localisation
+#   resource_group_name = azurerm_resource_group.main.name
+#   application_type    = "web"
+# }
 
 resource "azurerm_monitor_action_group" "monitor" {
   name                = var.action_group_name
@@ -413,7 +420,7 @@ resource "azurerm_monitor_metric_alert" "vm" {
   name                = var.alert_name_vm
   resource_group_name = azurerm_resource_group.main.name
   scopes              = [azurerm_linux_virtual_machine.vm.id]
-  description         = "Action déclenchée quand CPU > 90%"
+  description         = "CPU > 90%"
 
   criteria {
     metric_namespace = "Microsoft.Compute/virtualMachines"
@@ -431,12 +438,12 @@ resource "azurerm_monitor_metric_alert" "vm" {
 resource "azurerm_monitor_metric_alert" "mariadb" {
   name                = var.alert_name_db
   resource_group_name = azurerm_resource_group.main.name
-  scopes              = [azurerm_mariadb_database.mariadb.id]
-  description         = "Action déclenchée quand espace disponible sur la base de données < 10%"
+  scopes              = [azurerm_mariadb_server.mariadb.id]
+  description         = "Espace disponible sur la base de données < 10%"
 
   criteria {
-    metric_namespace = "Microsoft.DBforMariaDB/servers/databases"
-    metric_name      = "storage_used"
+    metric_namespace = "Microsoft.DBforMariaDB/servers"
+    metric_name      = "storage_percent"
     aggregation      = "Average"
     operator         = "GreaterThan"
     threshold        = 90
@@ -451,13 +458,14 @@ resource "azurerm_monitor_metric_alert" "gateway" {
   name                = var.alert_name_gateway
   resource_group_name = azurerm_resource_group.main.name
   scopes              = [azurerm_application_gateway.gateway.id]
-  description         = "Action déclenchée quand l'application est indisponible"
+  description         = "Application gateway indisponible"
+  # if number of backend servers that Application Gateway is unable to probe successfully > 0
 
   criteria {
     metric_namespace = "Microsoft.Network/applicationGateways"
-    metric_name      = "Heartbeat"
-    aggregation      = "Total"
-    operator         = "Equals"
+    metric_name      = "UnhealthyHostCount"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
     threshold        = 0
   }
 
@@ -470,7 +478,7 @@ resource "azurerm_monitor_metric_alert" "gateway" {
 #   name                = var.alert_name_gateway
 #   resource_group_name = azurerm_resource_group.main.name
 #   scopes              = [azurerm_application_gateway.gateway.id]
-#   description         = "Action déclenchée quand la date d’expiration du certificat TLS est < 7 jours"
+#   description         = "Date d’expiration du certificat TLS < 7 jours"
 
 #   criteria {
 #     metric_namespace = ""

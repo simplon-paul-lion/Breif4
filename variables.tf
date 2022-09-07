@@ -201,3 +201,7 @@ variable "alert_name_db"{
 variable "alert_name_gateway"{
     default = "Alert_gateway_G3B4"
 }
+
+variable "app_insight_name"{
+    default = "AppInsight_G3B4"
+}

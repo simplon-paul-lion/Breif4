@@ -54,15 +54,15 @@ resource "azurerm_public_ip" "adresse_bastion" {
   domain_name_label   = var.DNS_bastion
 }
 
-## Create the public IP for VM
+## Create the public IP for gateway
 
-resource "azurerm_public_ip" "adresse_vm" {
-  name                = var.ip_vm
+resource "azurerm_public_ip" "adresse_gateway" {
+  name                = var.ip_gateway
   location            = var.localisation
   resource_group_name = azurerm_resource_group.main.name
   allocation_method   = "Static"
   sku                 = "Standard"
-  domain_name_label   = var.DNS_vm
+  domain_name_label   = var.DNS_gateway
 }
 
 ## Create bastion
@@ -81,7 +81,7 @@ resource "azurerm_bastion_host" "bastion" {
   }
 }
 
-## Create VM
+## Create VM network interface
 
 resource "azurerm_network_interface" "vm" {
   name                = var.VM-nic
@@ -96,6 +96,8 @@ resource "azurerm_network_interface" "vm" {
   }
 }
 
+# Read script cloud-init
+
 data "template_file" "script" {
   template = "${file("cloud-init.yml")}"
 }
@@ -109,6 +111,8 @@ data "template_cloudinit_config" "cloudinit" {
     content      = "${data.template_file.script.rendered}"
   }
 }
+
+# Create VM
 
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = var.VM_name
@@ -167,19 +171,7 @@ resource "azurerm_network_security_group" "vm" {
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_ranges    = ["8080"]
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = var.VM_rule3
-    priority                   = 102
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_ranges    = ["443"]
+    destination_port_ranges    = ["80"]
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -228,8 +220,37 @@ resource "azurerm_mariadb_firewall_rule" "mariadb" {
   name                = var.mariadb_rule
   resource_group_name = azurerm_resource_group.main.name
   server_name         = azurerm_mariadb_server.mariadb.name
-  start_ip_address    = azurerm_public_ip.adresse_vm.ip_address
-  end_ip_address      = azurerm_public_ip.adresse_vm.ip_address
+  start_ip_address    = azurerm_public_ip.adresse_gateway.ip_address
+  end_ip_address      = azurerm_public_ip.adresse_gateway.ip_address
+}
+
+## Create storage account
+
+resource "azurerm_storage_account" "vm" {
+  name                     = var.storage_name
+  resource_group_name      = azurerm_resource_group.main.name
+  location                 = var.localisation
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+
+   network_rules {
+    default_action             = "Allow"
+    ip_rules                   = var.ip_gateway
+    virtual_network_subnet_ids = [azurerm_subnet.subnet_vm.id]
+  }
+
+  tags = {
+    environment = "staging"
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "example" {
+  name               = "example"
+  storage_account_id = azurerm_storage_account.example.id
+
+  properties = {
+    hello = "aGVsbG8="
+  }
 }
 
 ## Create gateway
@@ -262,12 +283,12 @@ resource "azurerm_application_gateway" "gateway" {
 
   frontend_port {
     name = local.frontend_port_name
-    port = 8080
+    port = 80
   }
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
-    public_ip_address_id = azurerm_public_ip.adresse_vm.id
+    public_ip_address_id = azurerm_public_ip.adresse_gateway.id
   }
 
   backend_address_pool {
@@ -278,7 +299,7 @@ resource "azurerm_application_gateway" "gateway" {
     name                  = local.http_setting_name
     cookie_based_affinity = "Disabled"
     path                  = "/path1/"
-    port                  = 80
+    port                  = 8080
     protocol              = "Http"
     request_timeout       = 60
   }
@@ -306,64 +327,7 @@ resource "azurerm_network_interface_application_gateway_backend_address_pool_ass
   backend_address_pool_id = tolist(azurerm_application_gateway.gateway.backend_address_pool).0.id
 }
 
-## Create keyvault
-
-data "azurerm_client_config" "current" {}
-
-resource "azurerm_key_vault" "keyvault" {
-  name                        = var.keyvault_name
-  location                    = var.localisation
-  resource_group_name         = azurerm_resource_group.main.name
-  enabled_for_disk_encryption = true
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  soft_delete_retention_days  = 7
-  purge_protection_enabled    = false
-
-  sku_name = "standard"
-
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id
-
-    key_permissions = [
-      "Get", "Backup", "Create", "Decrypt", "Delete", "Encrypt", "Import", "List", "Purge", "Recover", "Restore", "Sign", "Update", "UnwrapKey", "Verify", "WrapKey"
-    ]
-
-    secret_permissions = [
-      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore","Set"
-    ]
-
-    storage_permissions = [
-      "Get", "Backup", "Delete", "DeleteSAS", "GetSAS", "List","ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update"
-    ]
-  }
-}
-
-resource "azurerm_storage_account" "keyvault" {
-  name                     = var.storage_name
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = var.localisation
-  account_tier             = "Standard"
-  account_replication_type = "GRS"
-
-  tags = {
-    environment = "staging"
-  }
-}
-
-resource "azurerm_storage_container" "keyvault" {
-  name                  = var.container_name
-  storage_account_name  = azurerm_storage_account.keyvault.name
-  container_access_type = "private"
-}
-
-resource "azurerm_storage_blob" "keyvault" {
-  name                   = "/.well-known/acme-challenge"
-  storage_account_name   = azurerm_storage_account.keyvault.name
-  storage_container_name = azurerm_storage_container.keyvault.name
-  type                   = "Block"
-  source                 = "test.txt"
-}
+## Create Monitor
 
 resource "azurerm_log_analytics_workspace" "monitor" {
   name                = var.log_name
@@ -372,13 +336,6 @@ resource "azurerm_log_analytics_workspace" "monitor" {
   sku                 = "PerGB2018"
   retention_in_days   = 30
 }
-
-# resource "azurerm_application_insights" "monitor" {
-#   name                = var.app_insight_name
-#   location            = var.localisation
-#   resource_group_name = azurerm_resource_group.main.name
-#   application_type    = "web"
-# }
 
 resource "azurerm_monitor_action_group" "monitor" {
   name                = var.action_group_name
@@ -473,22 +430,3 @@ resource "azurerm_monitor_metric_alert" "gateway" {
     action_group_id = azurerm_monitor_action_group.monitor.id
   }
 }
-
-# resource "azurerm_monitor_metric_alert" "gateway" {
-#   name                = var.alert_name_gateway
-#   resource_group_name = azurerm_resource_group.main.name
-#   scopes              = [azurerm_application_gateway.gateway.id]
-#   description         = "Date d’expiration du certificat TLS < 7 jours"
-
-#   criteria {
-#     metric_namespace = ""
-#     metric_name      = ""
-#     aggregation      = "Total"
-#     operator         = "LesserThan"
-#     threshold        = 7
-#   }
-
-#   action {
-#     action_group_id = azurerm_monitor_action_group.monitor.id
-#   }
-# }

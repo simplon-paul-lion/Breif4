@@ -26,8 +26,8 @@ variable "ip_bastion" {
   default = "IP_publique_bastion"
 }
 
-variable "ip_vm" {
-  default = "IP_publique_vm"
+variable "ip_gateway" {
+  default = "IP_publique_gateway"
 }
 
 variable "bastion" {
@@ -38,8 +38,8 @@ variable "DNS_bastion"{
     default = "dns-g3"
 }
 
-variable "DNS_vm"{
-    default = "dns-vm-g3"
+variable "DNS_gateway"{
+    default = "dns-gateway-g3"
 }
 
 variable "VM-nic"{
@@ -82,10 +82,6 @@ variable "VM_rule2"{
     default = "HTTP"
 }
 
-variable "VM_rule3"{
-    default = "HTTPS"
-}
-
 variable "server_name"{
     default = "serverg3b4"
 }
@@ -124,14 +120,6 @@ variable "storage_name"{
 
 variable "container_name"{
     default = "g3conteneur"
-}
-
-variable "cache_name"{
-    default = "cache_TLS"
-}
-
-variable "cache_blob_name"{
-    default = "cache_blobe_TLS"
 }
 
 variable "blob_name"{

@@ -110,20 +110,8 @@ variable "gateway_config"{
     default = "gateway-ip-configuration"
 }
 
-variable "keyvault_name"{
-    default = "keyvault-g3b4"
-}
-
 variable "storage_name"{
     default = "g3stockage"
-}
-
-variable "container_name"{
-    default = "g3conteneur"
-}
-
-variable "blob_name"{
-    default = "stockage_blob"
 }
 
 variable "log_name"{
@@ -188,8 +176,4 @@ variable "alert_name_db"{
 
 variable "alert_name_gateway"{
     default = "Alert_gateway_G3B4"
-}
-
-variable "app_insight_name"{
-    default = "AppInsight_G3B4"
 }

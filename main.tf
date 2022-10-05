@@ -1,5 +1,3 @@
-# connexion vm : az network bastion ssh -n "bastion_brief4_g3" --resource-group "brief4_g3" --target-resource-id "/subscriptions/a1f74e2d-ec58-4f9a-a112-088e3469febb/resourceGroups/brief4_g3/providers/Microsoft.Compute/virtualMachines/VM_g3" --auth-type "ssh-key" --username "celia" --ssh-key "C:/Users/utilisateur/.ssh/id_rsa"
-
 ## Create a resource group
 
 resource "azurerm_resource_group" "main" {
@@ -204,7 +202,7 @@ resource "azurerm_mariadb_server" "mariadb" {
   backup_retention_days = 7 
   geo_redundant_backup_enabled = false 
   public_network_access_enabled = true
-  ssl_enforcement_enabled = true
+  ssl_enforcement_enabled = false
 }
 
 resource "azurerm_mariadb_database" "mariadb" {
@@ -222,35 +220,6 @@ resource "azurerm_mariadb_firewall_rule" "mariadb" {
   server_name         = azurerm_mariadb_server.mariadb.name
   start_ip_address    = azurerm_public_ip.adresse_gateway.ip_address
   end_ip_address      = azurerm_public_ip.adresse_gateway.ip_address
-}
-
-## Create storage account
-
-resource "azurerm_storage_account" "vm" {
-  name                     = var.storage_name
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = var.localisation
-  account_tier             = "Standard"
-  account_replication_type = "GRS"
-
-   network_rules {
-    default_action             = "Allow"
-    ip_rules                   = var.ip_gateway
-    virtual_network_subnet_ids = [azurerm_subnet.subnet_vm.id]
-  }
-
-  tags = {
-    environment = "staging"
-  }
-}
-
-resource "azurerm_storage_data_lake_gen2_filesystem" "example" {
-  name               = "example"
-  storage_account_id = azurerm_storage_account.example.id
-
-  properties = {
-    hello = "aGVsbG8="
-  }
 }
 
 ## Create gateway

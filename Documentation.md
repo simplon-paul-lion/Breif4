@@ -66,11 +66,9 @@ resource "azurerm_resource_group" "example" {
 
 Ceci correspond à la syntaxe : 
 
-">BLOCK TYPE<" ">BLOCK LABEL<" ">BLOCK LABEL<" {
-
-  ##Block body##
+">BLOCK TYPE<" ">BLOCK LABEL<" ">BLOCK LABEL<" { ##Block body##
   
-  >IDENTIFIER< = >EXPRESSION< #Argument
+  ">IDENTIFIER<" = ">EXPRESSION<" ##Argument##
 }
 
 *"azurerm_resource_group"* est un bloc qui indique  à terraform le type d'infrastructure à créer. 

@@ -1,5 +1,5 @@
 #!usr/bien/env Rscript
-charge_r = read.csv("/home/celia/charge/charge.csv")
+charge_r = read.csv("/home/***/total.csv")
 colnames(charge_r) = c("Temps", "Instance")
 library(data.table)
 library(ggplot2)

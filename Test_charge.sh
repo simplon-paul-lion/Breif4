@@ -1,3 +1,4 @@
+#!/bin/bash
 seq 500 | parallel --max-args 0  --jobs 20 "curl -k -iF 'vote=Dogs' https://vote.simplon-celia.space" > test_file
 sed '/ 504 Gateway Time-out/I,+2 d' test_file > test_charge
 grep "^Date" test_charge > date

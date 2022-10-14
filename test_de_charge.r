@@ -1,6 +1,9 @@
 #!usr/bien/env Rscript
 charge_r = read.csv("/home/***/total.csv")
 colnames(charge_r) = c("Temps", "Instance")
+install.packages("data.table")
+install.packages("ggplot2")
+install.packages("dplyr")
 library(data.table)
 library(ggplot2)
 library("dplyr")

@@ -1,4 +1,7 @@
 #!/bin/bash
+sudo apt install parallel 
+sudo apt install r-base-core
+sudo apt install r-cran-littler
 seq 500 | parallel --max-args 0  --jobs 20 "curl -k -iF 'vote=Dogs' https://vote.simplon-celia.space" > test_file
 sed '/ 504 Gateway Time-out/I,+2 d' test_file > test_charge
 grep "^Date" test_charge > date
@@ -11,4 +14,4 @@ sed -e "s/X-HANDLED-BY://g" -i handle
 paste -d, date3 handle > total
 sed -e "s/ //g" -i total
 mv total total.csv
-Rscript test_de_charge.r
+sudo Rscript test_de_charge.r

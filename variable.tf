@@ -7,11 +7,11 @@ variable "location" {
 }
 
 variable "vnet_j" {
-  default = "vnet_j"
+  default = "vnet_brief4"
 }
 
 variable "subnet_j" {
-  default = "subnet_j"
+  default = "subnet_brief4"
 }
 
 
